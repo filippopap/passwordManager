@@ -20,8 +20,13 @@ def printColored(text, origin="[INFO]"):
 
 def generate_key():
     key = Fernet.generate_key()
-    with open("secret.key", "wb") as key_file:
-        key_file.write(key)
+    if os.path.isfile("secret.key"):
+        printColored("ATTENZIONE: secret.key già presente alla radice di progetto.", "[ERROR]")
+        return True
+    else:
+        with open("secret.key", "wb") as key_file:
+            key_file.write(key)
+        return False
 
 
 def load_key():
@@ -149,7 +154,7 @@ def delete_service(passwords, key):
             printColored("Servizio: " + service, "[RIEP]")
             printColored("Nome Utente: " + username, "[RIEP]")
             printColored("Password: " + password, "[RIEP]")
-            sure = printColored("Sei sicuro di voler eliminare questo servizio? (SI/NO)", "[QUEST]").strip().upper()
+            sure = printColored("Sei sicuro di voler eliminare questo servizio? (SI/NO): ", "[QUEST]").strip().upper()
             if sure == "SI" or sure == "S":
                 target_tuple = (service, username, password)
                 index_to_remove = next((i for i, entry in enumerate(passwords) if entry == target_tuple), None)
@@ -173,17 +178,20 @@ def list_services(passwords):
 
 
 def main():
-    choice = printColored("Hai già una chiave segreta? (SI/NO): ", "[QUEST]").strip().upper()
-    if choice == "SI" or choice == "S":
-        printColored("Seleziona il file secret.key")
-        key = load_key()
-    elif choice == "NO" or choice == "N":
-        printColored("Chiave generata (secret.key). NASCONDILA E CONSERVALA, serve a recuperare le tue password!")
-        generate_key()
-        printColored("Ora seleziona il file secret.key")
-        key = load_key()
-    else:
-        return
+    while True:
+        choice = printColored("Hai già una chiave segreta? (SI/NO): ", "[QUEST]").strip().upper()
+        if choice == "SI" or choice == "S":
+            printColored("Seleziona il file secret.key")
+            key = load_key()
+            break
+        elif choice == "NO" or choice == "N":
+            already_exist = generate_key()
+            if not already_exist:
+                printColored("Chiave generata (secret.key). NASCONDILA E CONSERVALA, serve a recuperare le tue "
+                             "password!")
+                key = load_key()
+                printColored("Ora seleziona il file secret.key")
+                break
 
     passwords = load_passwords(key)
 
